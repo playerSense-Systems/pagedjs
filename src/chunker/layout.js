@@ -825,10 +825,18 @@ class Layout {
 		node = null,
 		extract = true,
 	) {
+		console.log('[pagedjs:findBreakToken] Called', {
+			extract,
+			nodeType: node?.nodeName,
+		});
+
 		let breakToken,
 			overflow = [];
 
 		let overflowResult = this.findOverflow(rendered, bounds, source);
+		console.log('[pagedjs:findBreakToken] findOverflow returned', {
+			hasResult: !!overflowResult,
+		});
 		while (overflowResult) {
 			// Check whether overflow already added - multiple overflows might result in the
 			// same range via avoid break rules.
@@ -1477,10 +1485,16 @@ class Layout {
 	 * @returns {null | Range} range - null if there is no overflow.
 	 */
 	findOverflow(rendered, bounds, source) {
+		console.log('[pagedjs:findOverflow] Called', {
+			hasOverflow: this.hasOverflow(rendered, bounds),
+			isOverflowTagged: rendered.dataset?.overflowTagged,
+		});
+
 		if (
 			!this.hasOverflow(rendered, bounds) ||
 			rendered.dataset.overflowTagged
 		) {
+			console.log('[pagedjs:findOverflow] Early return - no overflow or already tagged');
 			return;
 		}
 
@@ -1514,7 +1528,13 @@ class Layout {
 			bounds,
 		);
 
+		console.log('[pagedjs:findOverflow] startOfNewOverflow result', {
+			startOfOverflow: startOfOverflow?.nodeName || startOfOverflow?.textContent?.substring(0, 30),
+			anyOverflowFound,
+		});
+
 		if (!anyOverflowFound) {
+			console.log('[pagedjs:findOverflow] No overflow found by startOfNewOverflow');
 			return;
 		}
 
@@ -1630,13 +1650,19 @@ class Layout {
 			check = check.parentElement;
 		} while (check && check !== rendered);
 
-		return this.tagAndCreateOverflowRange(
+		const overflowRange = this.tagAndCreateOverflowRange(
 			startOfOverflow,
 			rangeStart,
 			rangeEnd,
 			bounds,
 			rendered,
 		);
+		console.log('[pagedjs:findOverflow] Created overflow range', {
+			hasRange: !!overflowRange,
+			rangeStart: rangeStart?.nodeName,
+			rangeEnd: rangeEnd?.nodeName,
+		});
+		return overflowRange;
 	}
 
 	findEndToken(rendered, source) {
