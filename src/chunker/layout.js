@@ -1667,6 +1667,8 @@ class Layout {
 			// overflow doesn't do strange things - they may be affecting
 			// widths on this page.
 			Array.from(check.parentElement.children).forEach((childNode) => {
+				// Skip SVG elements - they have read-only width properties
+				if (childNode instanceof SVGElement) return;
 				let style = getComputedStyle(childNode);
 				childNode.width = style.width;
 			});
