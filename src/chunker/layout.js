@@ -337,15 +337,38 @@ class Layout {
 	 * @returns {void}
 	 */
 	addOverflowToPage(dest, breakToken, alreadyRendered) {
+		console.log('[pagedjs:addOverflowToPage] Called', {
+			hasBreakToken: !!breakToken,
+			overflowCount: breakToken?.overflow?.length || 0,
+		});
+
 		if (!breakToken || !breakToken.overflow.length) {
+			console.log('[pagedjs:addOverflowToPage] No overflow to add');
 			return;
 		}
 
 		let fragment;
 
-		breakToken.overflow.forEach((overflow) => {
+		breakToken.overflow.forEach((overflow, index) => {
 			// A handy way to dump the contents of a fragment.
 			// console.log([].map.call(overflow.content.children, e => e.outerHTML).join('\n'));
+
+			console.log(`[pagedjs:addOverflowToPage] Processing overflow ${index}`, {
+				hasOverflow: !!overflow,
+				hasNode: !!overflow?.node,
+				hasContent: !!overflow?.content,
+				nodeType: overflow?.node?.nodeName,
+				contentChildCount: overflow?.content?.children?.length,
+			});
+
+			if (!overflow) {
+				console.error('[pagedjs:addOverflowToPage] OVERFLOW IS UNDEFINED - content will be lost!');
+				return;
+			}
+			if (!overflow.node) {
+				console.error('[pagedjs:addOverflowToPage] OVERFLOW.NODE IS UNDEFINED - content will be lost!');
+				return;
+			}
 
 			fragment = rebuildTree(overflow.node, fragment, alreadyRendered);
 			// Find the parent to which overflow.content should be added.
@@ -512,6 +535,13 @@ class Layout {
 	}
 
 	createOverflow(overflow, rendered, source) {
+		console.log('[pagedjs:createOverflow] Creating overflow object', {
+			startContainer: overflow.startContainer,
+			startOffset: overflow.startOffset,
+			endContainer: overflow.endContainer,
+			endOffset: overflow.endOffset,
+		});
+
 		let container = overflow.startContainer;
 		let offset = overflow.startOffset;
 		let node, renderedNode, parent, index, temp;
@@ -609,16 +639,24 @@ class Layout {
 		}
 
 		if (!node) {
+			console.warn('[pagedjs:createOverflow] EARLY RETURN - node is falsy');
 			return;
 		}
 
-		return new Overflow(
+		const overflowObj = new Overflow(
 			node,
 			offset,
 			overflow.getBoundingClientRect().height,
 			overflow,
 			topLevel,
 		);
+		console.log('[pagedjs:createOverflow] Created overflow object', {
+			node: node.nodeName || node.textContent?.substring(0, 50),
+			offset,
+			overflowHeight: overflowObj.overflowHeight,
+			topLevel,
+		});
+		return overflowObj;
 	}
 
 	/**
@@ -667,9 +705,19 @@ class Layout {
 		node,
 		extract,
 	) {
+		console.log('[pagedjs:processOverflowResult] Processing overflow ranges', {
+			rangeCount: ranges.length,
+			extract,
+			nodeType: node?.nodeName,
+		});
+
 		let breakToken, breakLetter;
 
-		ranges.forEach((overflowRange) => {
+		ranges.forEach((overflowRange, rangeIndex) => {
+			console.log(`[pagedjs:processOverflowResult] Range ${rangeIndex}`, {
+				startContainer: overflowRange.startContainer?.nodeName,
+				endContainer: overflowRange.endContainer?.nodeName,
+			});
 			let overflowHooks = this.hooks.onOverflow.triggerSync(
 				overflowRange,
 				rendered,
@@ -851,10 +899,27 @@ class Layout {
 		let scrollHeight = constrainingElement
 			? constrainingElement.scrollHeight
 			: 0;
-		return (
+
+		const hasOverflowResult = (
 			Math.max(Math.ceil(width), scrollWidth) > Math.ceil(bounds.width) ||
 			Math.max(Math.ceil(height), scrollHeight) > Math.ceil(bounds.height)
 		);
+
+		// DEBUG: Log overflow detection
+		if (hasOverflowResult) {
+			console.log('[pagedjs:hasOverflow] OVERFLOW DETECTED', {
+				elementWidth: width,
+				elementHeight: height,
+				scrollWidth,
+				scrollHeight,
+				boundsWidth: bounds.width,
+				boundsHeight: bounds.height,
+				widthOverflow: Math.max(Math.ceil(width), scrollWidth) > Math.ceil(bounds.width),
+				heightOverflow: Math.max(Math.ceil(height), scrollHeight) > Math.ceil(bounds.height),
+			});
+		}
+
+		return hasOverflowResult;
 	}
 
 	/**
@@ -1715,7 +1780,17 @@ class Layout {
 
 	removeOverflow(overflow, breakLetter) {
 		let { startContainer } = overflow;
+		console.log('[pagedjs:removeOverflow] Extracting overflow content', {
+			startContainer: startContainer?.nodeName,
+			rangeString: overflow.toString()?.substring(0, 100),
+		});
+
 		let extracted = overflow.extractContents();
+
+		console.log('[pagedjs:removeOverflow] Extracted content', {
+			childCount: extracted?.children?.length || 0,
+			textContent: extracted?.textContent?.substring(0, 100),
+		});
 
 		this.hyphenateAtBreak(startContainer, breakLetter);
 
