@@ -1071,13 +1071,36 @@ class Layout {
 			parentBottomMargin = result["margin-bottom"];
 		}
 
+		console.log('[pagedjs:firstOverflowingChild] Called', {
+			nodeType: node.nodeName,
+			childCount: node.childNodes.length,
+			bounds: { bLeft, bRight, bTop, bBottom },
+		});
+
+		let childIndex = 0;
 		for (const child of node.childNodes) {
 			if (child.tagName == "COLGROUP") {
+				childIndex++;
 				continue;
 			}
 
 			let pos = getBoundingClientRect(child);
 			let bottomMargin = 0;
+
+			// DEBUG: Log first few children and any that might be close to overflowing
+			if (childIndex < 3 || (pos.bottom && pos.bottom > bBottom - 100)) {
+				console.log(`[pagedjs:firstOverflowingChild] Child ${childIndex}`, {
+					tagName: child.tagName || '#text',
+					className: child.className || '',
+					pos: { left: Math.ceil(pos.left), right: Math.floor(pos.right), top: Math.ceil(pos.top), bottom: Math.floor(pos.bottom) },
+					overflow: {
+						left: Math.ceil(pos.left) < bLeft,
+						right: Math.floor(pos.right) > bRight,
+						top: Math.ceil(pos.top) < bTop,
+						bottom: Math.floor(pos.bottom) > bBottom,
+					},
+				});
+			}
 
 			if (isElement(child)) {
 				let styles = window.getComputedStyle(child);
@@ -1122,10 +1145,19 @@ class Layout {
 			}
 
 			if (left < bLeft || right > bRight || top < bTop || bottom > bBottom) {
+				console.log(`[pagedjs:firstOverflowingChild] FOUND overflow at child ${childIndex}`, {
+					tagName: child.tagName || '#text',
+					reason: { left: left < bLeft, right: right > bRight, top: top < bTop, bottom: bottom > bBottom },
+				});
 				return child;
 			}
+			childIndex++;
 		}
 
+		console.log('[pagedjs:firstOverflowingChild] No overflowing child found', {
+			totalChildrenChecked: childIndex,
+			result,
+		});
 		return result;
 	}
 
