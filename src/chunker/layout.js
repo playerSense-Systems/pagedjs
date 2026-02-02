@@ -337,13 +337,7 @@ class Layout {
 	 * @returns {void}
 	 */
 	addOverflowToPage(dest, breakToken, alreadyRendered) {
-		console.log('[pagedjs:addOverflowToPage] Called', {
-			hasBreakToken: !!breakToken,
-			overflowCount: breakToken?.overflow?.length || 0,
-		});
-
 		if (!breakToken || !breakToken.overflow.length) {
-			console.log('[pagedjs:addOverflowToPage] No overflow to add');
 			return;
 		}
 
@@ -353,20 +347,10 @@ class Layout {
 			// A handy way to dump the contents of a fragment.
 			// console.log([].map.call(overflow.content.children, e => e.outerHTML).join('\n'));
 
-			console.log(`[pagedjs:addOverflowToPage] Processing overflow ${index}`, {
-				hasOverflow: !!overflow,
-				hasNode: !!overflow?.node,
-				hasContent: !!overflow?.content,
-				nodeType: overflow?.node?.nodeName,
-				contentChildCount: overflow?.content?.children?.length,
-			});
-
 			if (!overflow) {
-				console.error('[pagedjs:addOverflowToPage] OVERFLOW IS UNDEFINED - content will be lost!');
 				return;
 			}
 			if (!overflow.node) {
-				console.error('[pagedjs:addOverflowToPage] OVERFLOW.NODE IS UNDEFINED - content will be lost!');
 				return;
 			}
 
@@ -535,13 +519,6 @@ class Layout {
 	}
 
 	createOverflow(overflow, rendered, source) {
-		console.log('[pagedjs:createOverflow] Creating overflow object', {
-			startContainer: overflow.startContainer,
-			startOffset: overflow.startOffset,
-			endContainer: overflow.endContainer,
-			endOffset: overflow.endOffset,
-		});
-
 		let container = overflow.startContainer;
 		let offset = overflow.startOffset;
 		let node, renderedNode, parent, index, temp;
@@ -639,7 +616,6 @@ class Layout {
 		}
 
 		if (!node) {
-			console.warn('[pagedjs:createOverflow] EARLY RETURN - node is falsy');
 			return;
 		}
 
@@ -650,12 +626,6 @@ class Layout {
 			overflow,
 			topLevel,
 		);
-		console.log('[pagedjs:createOverflow] Created overflow object', {
-			node: node.nodeName || node.textContent?.substring(0, 50),
-			offset,
-			overflowHeight: overflowObj.overflowHeight,
-			topLevel,
-		});
 		return overflowObj;
 	}
 
@@ -705,19 +675,9 @@ class Layout {
 		node,
 		extract,
 	) {
-		console.log('[pagedjs:processOverflowResult] Processing overflow ranges', {
-			rangeCount: ranges.length,
-			extract,
-			nodeType: node?.nodeName,
-		});
-
 		let breakToken, breakLetter;
 
 		ranges.forEach((overflowRange, rangeIndex) => {
-			console.log(`[pagedjs:processOverflowResult] Range ${rangeIndex}`, {
-				startContainer: overflowRange.startContainer?.nodeName,
-				endContainer: overflowRange.endContainer?.nodeName,
-			});
 			let overflowHooks = this.hooks.onOverflow.triggerSync(
 				overflowRange,
 				rendered,
@@ -825,18 +785,10 @@ class Layout {
 		node = null,
 		extract = true,
 	) {
-		console.log('[pagedjs:findBreakToken] Called', {
-			extract,
-			nodeType: node?.nodeName,
-		});
-
 		let breakToken,
 			overflow = [];
 
 		let overflowResult = this.findOverflow(rendered, bounds, source);
-		console.log('[pagedjs:findBreakToken] findOverflow returned', {
-			hasResult: !!overflowResult,
-		});
 		while (overflowResult) {
 			// Check whether overflow already added - multiple overflows might result in the
 			// same range via avoid break rules.
@@ -908,26 +860,10 @@ class Layout {
 			? constrainingElement.scrollHeight
 			: 0;
 
-		const hasOverflowResult = (
+		return (
 			Math.max(Math.ceil(width), scrollWidth) > Math.ceil(bounds.width) ||
 			Math.max(Math.ceil(height), scrollHeight) > Math.ceil(bounds.height)
 		);
-
-		// DEBUG: Log overflow detection
-		if (hasOverflowResult) {
-			console.log('[pagedjs:hasOverflow] OVERFLOW DETECTED', {
-				elementWidth: width,
-				elementHeight: height,
-				scrollWidth,
-				scrollHeight,
-				boundsWidth: bounds.width,
-				boundsHeight: bounds.height,
-				widthOverflow: Math.max(Math.ceil(width), scrollWidth) > Math.ceil(bounds.width),
-				heightOverflow: Math.max(Math.ceil(height), scrollHeight) > Math.ceil(bounds.height),
-			});
-		}
-
-		return hasOverflowResult;
 	}
 
 	/**
@@ -1071,12 +1007,6 @@ class Layout {
 			parentBottomMargin = result["margin-bottom"];
 		}
 
-		console.log('[pagedjs:firstOverflowingChild] Called', {
-			nodeType: node.nodeName,
-			childCount: node.childNodes.length,
-			bounds: { bLeft, bRight, bTop, bBottom },
-		});
-
 		let childIndex = 0;
 		for (const child of node.childNodes) {
 			if (child.tagName == "COLGROUP") {
@@ -1086,21 +1016,6 @@ class Layout {
 
 			let pos = getBoundingClientRect(child);
 			let bottomMargin = 0;
-
-			// DEBUG: Log first few children and any that might be close to overflowing
-			if (childIndex < 3 || (pos.bottom && pos.bottom > bBottom - 100)) {
-				console.log(`[pagedjs:firstOverflowingChild] Child ${childIndex}`, {
-					tagName: child.tagName || '#text',
-					className: child.className || '',
-					pos: { left: Math.ceil(pos.left), right: Math.floor(pos.right), top: Math.ceil(pos.top), bottom: Math.floor(pos.bottom) },
-					overflow: {
-						left: Math.ceil(pos.left) < bLeft,
-						right: Math.floor(pos.right) > bRight,
-						top: Math.ceil(pos.top) < bTop,
-						bottom: Math.floor(pos.bottom) > bBottom,
-					},
-				});
-			}
 
 			if (isElement(child)) {
 				let styles = window.getComputedStyle(child);
@@ -1145,19 +1060,11 @@ class Layout {
 			}
 
 			if (left < bLeft || right > bRight || top < bTop || bottom > bBottom) {
-				console.log(`[pagedjs:firstOverflowingChild] FOUND overflow at child ${childIndex}`, {
-					tagName: child.tagName || '#text',
-					reason: { left: left < bLeft, right: right > bRight, top: top < bTop, bottom: bottom > bBottom },
-				});
 				return child;
 			}
 			childIndex++;
 		}
 
-		console.log('[pagedjs:firstOverflowingChild] No overflowing child found', {
-			totalChildrenChecked: childIndex,
-			result,
-		});
 		return result;
 	}
 
@@ -1517,16 +1424,10 @@ class Layout {
 	 * @returns {null | Range} range - null if there is no overflow.
 	 */
 	findOverflow(rendered, bounds, source) {
-		console.log('[pagedjs:findOverflow] Called', {
-			hasOverflow: this.hasOverflow(rendered, bounds),
-			isOverflowTagged: rendered.dataset?.overflowTagged,
-		});
-
 		if (
 			!this.hasOverflow(rendered, bounds) ||
 			rendered.dataset.overflowTagged
 		) {
-			console.log('[pagedjs:findOverflow] Early return - no overflow or already tagged');
 			return;
 		}
 
@@ -1560,13 +1461,7 @@ class Layout {
 			bounds,
 		);
 
-		console.log('[pagedjs:findOverflow] startOfNewOverflow result', {
-			startOfOverflow: startOfOverflow?.nodeName || startOfOverflow?.textContent?.substring(0, 30),
-			anyOverflowFound,
-		});
-
 		if (!anyOverflowFound) {
-			console.log('[pagedjs:findOverflow] No overflow found by startOfNewOverflow');
 			return;
 		}
 
@@ -1691,11 +1586,6 @@ class Layout {
 			bounds,
 			rendered,
 		);
-		console.log('[pagedjs:findOverflow] Created overflow range', {
-			hasRange: !!overflowRange,
-			rangeStart: rangeStart?.nodeName,
-			rangeEnd: rangeEnd?.nodeName,
-		});
 		return overflowRange;
 	}
 
@@ -1840,17 +1730,8 @@ class Layout {
 
 	removeOverflow(overflow, breakLetter) {
 		let { startContainer } = overflow;
-		console.log('[pagedjs:removeOverflow] Extracting overflow content', {
-			startContainer: startContainer?.nodeName,
-			rangeString: overflow.toString()?.substring(0, 100),
-		});
 
 		let extracted = overflow.extractContents();
-
-		console.log('[pagedjs:removeOverflow] Extracted content', {
-			childCount: extracted?.children?.length || 0,
-			textContent: extracted?.textContent?.substring(0, 100),
-		});
 
 		this.hyphenateAtBreak(startContainer, breakLetter);
 
